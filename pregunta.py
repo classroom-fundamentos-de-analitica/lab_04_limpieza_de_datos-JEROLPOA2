@@ -13,34 +13,23 @@ from datetime import datetime
 def clean_data():
 
     df = pd.read_csv("solicitudes_credito.csv", sep=";", index_col=0)
-
-    for i in df.columns:
-        
-        try:
-            df[i] = df[i].str.lower().str.strip()
-        except:
-            pass
-
-    df["barrio"] = df["barrio"].str.replace(r'[^a-zA-Z0-9]', '')
     
-    df["fecha_de_beneficio"] = pd.to_datetime(df['fecha_de_beneficio'], 
-                                              format='%d/%m/%Y', 
-                                              errors='coerce')
+    strings = [df[col].name for col in df.columns if df[col].dtype == 'object' and col != 'barrio' ]
+    df = df.replace('-', ' ', regex=True).replace('_',' ', regex=True)
     
-    df["fecha_de_beneficio"] = df["fecha_de_beneficio"].fillna(pd.to_datetime(df['fecha_de_beneficio'], 
-                                                                              format='%Y/%m/%d', errors='coerce'))
+    for i in strings:
+        df[i] = df[i].str.lower().str.strip()
 
+
+    df['barrio'] = df['barrio'].str.lower().replace('_', ' ', regex=True).replace('-', ' ', regex=True)
     df["comuna_ciudadano"] = df["comuna_ciudadano"].astype(int)
+    df["estrato"] = df["estrato"].astype(int)
     
-    df["monto_del_credito"] = df["monto_del_credito"].str.replace(r'[^a-zA-Z0-9]', '')
-    df["monto_del_credito"] = df["monto_del_credito"].astype(float)
+    df['fecha_de_beneficio'] = pd.to_datetime(df['fecha_de_beneficio'], format='%d/%m/%Y', errors='coerce').fillna(pd.to_datetime(df['fecha_de_beneficio'], format='%Y/%m/%d', errors='coerce'))
 
-    print(df)
+    df['monto_del_credito'] = df['monto_del_credito'].str.strip(' ').str.replace('[ ,$]', '').str.replace('\.00','').astype(float)
 
-    #
-    # Inserte su código aquí
-    #
-
+    df = df.dropna()
+    df = df.drop_duplicates()
+    
     return df
-
-clean_data()
